@@ -346,7 +346,12 @@ async function apiGet(params) {
   return r.json();
 }
 async function apiPost(body) {
-  const url = API + '?' + new URLSearchParams(body);
+  // Flatten nested objects for GET params
+  const flat = {};
+  for (const [k,v] of Object.entries(body)) {
+    flat[k] = typeof v === 'object' ? JSON.stringify(v) : v;
+  }
+  const url = API + '?' + new URLSearchParams(flat);
   const r = await fetch(url);
   return r.json();
 }
