@@ -342,18 +342,19 @@ const fmtEGP = n => 'EGP ' + fmt(n);
 
 async function apiGet(params) {
   const url = API + '?' + new URLSearchParams(params);
-  const r   = await fetch(url);
-  return r.json();
+  const r = await fetch(url, {redirect: 'follow'});
+  const text = await r.text();
+  return JSON.parse(text);
 }
 async function apiPost(body) {
-  // Flatten nested objects for GET params
   const flat = {};
   for (const [k,v] of Object.entries(body)) {
     flat[k] = typeof v === 'object' ? JSON.stringify(v) : v;
   }
   const url = API + '?' + new URLSearchParams(flat);
-  const r = await fetch(url);
-  return r.json();
+  const r = await fetch(url, {redirect: 'follow'});
+  const text = await r.text();
+  return JSON.parse(text);
 }
 
 function toast(msg, err = false) {
