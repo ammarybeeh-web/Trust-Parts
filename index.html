@@ -321,7 +321,7 @@
 // ============================================================
 //  CONFIG — paste your deployed Apps Script URL here
 // ============================================================
-const API = 'https://script.google.com/macros/s/AKfycbx-aorB-66uB3XEg8vvgZ7eng3_QYu4y_FfObDBWmPtrudHRkKRxyw8s1AjlFGTOEN5/exec';
+const API = 'YOUR_APPS_SCRIPT_URL_HERE';
 
 // ============================================================
 //  STATE
@@ -346,7 +346,8 @@ async function apiGet(params) {
   return r.json();
 }
 async function apiPost(body) {
-  const r = await fetch(API, { method: 'POST', body: JSON.stringify(body) });
+  const url = API + '?' + new URLSearchParams(body);
+  const r = await fetch(url);
   return r.json();
 }
 
