@@ -1,0 +1,716 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Trust Parts — Warehouse System</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;500;600;700&family=Barlow:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:       #0a0c10;
+    --surface:  #12151c;
+    --card:     #1a1e28;
+    --border:   #2a2f3e;
+    --accent:   #00a651;
+    --accent2:  #005f2f;
+    --gold:     #c9a84c;
+    --text:     #e8eaf0;
+    --muted:    #6b7280;
+    --danger:   #e53e3e;
+    --warn:     #d97706;
+    --info:     #3b82f6;
+    --radius:   10px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Barlow', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+  h1,h2,h3 { font-family: 'Barlow Condensed', sans-serif; letter-spacing: 0.04em; }
+
+  /* ---- SCREENS ---- */
+  .screen { display: none; min-height: 100vh; }
+  .screen.active { display: flex; flex-direction: column; }
+
+  /* ---- LOGIN ---- */
+  #loginScreen { align-items: center; justify-content: center; background: var(--bg); }
+  .login-box { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 48px 40px; width: 100%; max-width: 420px; }
+  .login-logo { text-align: center; margin-bottom: 32px; }
+  .login-logo .brand { font-family: 'Barlow Condensed', sans-serif; font-size: 42px; font-weight: 700; color: var(--accent); letter-spacing: 0.1em; }
+  .login-logo .sub { font-size: 13px; color: var(--muted); letter-spacing: 0.2em; text-transform: uppercase; margin-top: 4px; }
+  .tab-row { display: flex; gap: 4px; background: var(--card); border-radius: 8px; padding: 4px; margin-bottom: 28px; }
+  .tab-btn { flex: 1; padding: 8px; border: none; border-radius: 6px; background: transparent; color: var(--muted); cursor: pointer; font-family: 'Barlow Condensed', sans-serif; font-size: 15px; font-weight: 600; letter-spacing: 0.05em; transition: all .2s; }
+  .tab-btn.active { background: var(--accent); color: #fff; }
+  .field { margin-bottom: 16px; }
+  .field label { display: block; font-size: 12px; color: var(--muted); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 6px; }
+  .field input { width: 100%; padding: 11px 14px; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); color: var(--text); font-size: 15px; outline: none; transition: border-color .2s; }
+  .field input:focus { border-color: var(--accent); }
+  .btn-primary { width: 100%; padding: 12px; background: var(--accent); border: none; border-radius: var(--radius); color: #fff; font-family: 'Barlow Condensed', sans-serif; font-size: 17px; font-weight: 600; letter-spacing: 0.08em; cursor: pointer; transition: opacity .2s; }
+  .btn-primary:hover { opacity: 0.88; }
+  .btn-primary:disabled { opacity: 0.5; cursor: default; }
+  .login-err { color: var(--danger); font-size: 13px; text-align: center; margin-top: 12px; min-height: 20px; }
+
+  /* ---- TOP NAV ---- */
+  .topnav { background: var(--surface); border-bottom: 1px solid var(--border); padding: 0 24px; display: flex; align-items: center; gap: 16px; height: 56px; flex-shrink: 0; }
+  .topnav .brand { font-family: 'Barlow Condensed', sans-serif; font-size: 22px; font-weight: 700; color: var(--accent); letter-spacing: 0.08em; }
+  .topnav .divider { width: 1px; height: 24px; background: var(--border); }
+  .nav-links { display: flex; gap: 4px; flex: 1; }
+  .nav-btn { padding: 7px 14px; border: none; border-radius: 7px; background: transparent; color: var(--muted); cursor: pointer; font-family: 'Barlow Condensed', sans-serif; font-size: 15px; font-weight: 600; letter-spacing: 0.04em; transition: all .2s; white-space: nowrap; }
+  .nav-btn:hover { background: var(--card); color: var(--text); }
+  .nav-btn.active { background: var(--accent2); color: var(--accent); }
+  .user-badge { margin-left: auto; font-size: 13px; color: var(--muted); }
+  .user-badge span { color: var(--gold); font-weight: 500; }
+  .logout-btn { padding: 6px 12px; border: 1px solid var(--border); border-radius: 7px; background: transparent; color: var(--muted); cursor: pointer; font-size: 13px; transition: all .2s; margin-left: 8px; }
+  .logout-btn:hover { border-color: var(--danger); color: var(--danger); }
+
+  /* ---- PAGE CONTENT ---- */
+  .page-content { flex: 1; overflow-y: auto; }
+  .page { display: none; padding: 28px 28px; max-width: 1400px; margin: 0 auto; }
+  .page.active { display: block; }
+  .page-title { font-family: 'Barlow Condensed', sans-serif; font-size: 28px; font-weight: 700; color: var(--text); margin-bottom: 24px; letter-spacing: 0.04em; }
+
+  /* ---- STAT CARDS ---- */
+  .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; margin-bottom: 28px; }
+  .stat-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px 20px; }
+  .stat-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.12em; margin-bottom: 8px; }
+  .stat-val { font-family: 'Barlow Condensed', sans-serif; font-size: 28px; font-weight: 700; color: var(--text); }
+  .stat-val.green { color: var(--accent); }
+  .stat-val.red   { color: var(--danger); }
+  .stat-val.gold  { color: var(--gold); }
+  .stat-val.blue  { color: var(--info); }
+
+  /* ---- TABLE ---- */
+  .table-wrap { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; margin-bottom: 20px; }
+  .table-toolbar { padding: 14px 18px; display: flex; align-items: center; gap: 12px; border-bottom: 1px solid var(--border); flex-wrap: wrap; }
+  .table-toolbar h3 { font-family: 'Barlow Condensed', sans-serif; font-size: 18px; font-weight: 600; flex: 1; }
+  .search-input { padding: 7px 12px; background: var(--surface); border: 1px solid var(--border); border-radius: 7px; color: var(--text); font-size: 14px; outline: none; width: 220px; }
+  .search-input:focus { border-color: var(--accent); }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th { padding: 10px 14px; text-align: left; font-family: 'Barlow Condensed', sans-serif; font-size: 13px; font-weight: 600; letter-spacing: 0.08em; color: var(--muted); text-transform: uppercase; border-bottom: 1px solid var(--border); white-space: nowrap; }
+  td { padding: 10px 14px; border-bottom: 1px solid rgba(42,47,62,0.5); vertical-align: middle; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: rgba(255,255,255,0.02); }
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 12px; font-weight: 500; }
+  .badge-paid     { background: rgba(0,166,81,0.15); color: var(--accent); }
+  .badge-unpaid   { background: rgba(229,62,62,0.15); color: var(--danger); }
+  .badge-partial  { background: rgba(217,119,6,0.15); color: var(--warn); }
+  .badge-reorder  { background: rgba(229,62,62,0.15); color: var(--danger); }
+  .badge-ok       { background: rgba(0,166,81,0.15); color: var(--accent); }
+
+  /* ---- CART / ORDER FORM ---- */
+  .cart-panel { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; margin-bottom: 20px; }
+  .cart-title { font-family: 'Barlow Condensed', sans-serif; font-size: 18px; font-weight: 600; margin-bottom: 14px; }
+  .cart-item { display: flex; align-items: center; gap: 12px; padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 14px; }
+  .cart-item:last-child { border-bottom: none; }
+  .cart-item .ci-name { flex: 1; }
+  .cart-item .ci-qty  { width: 60px; padding: 4px 8px; background: var(--surface); border: 1px solid var(--border); border-radius: 6px; color: var(--text); text-align: center; font-size: 14px; }
+  .cart-item .ci-price{ width: 100px; text-align: right; color: var(--gold); font-weight: 500; }
+  .cart-item .ci-remove { color: var(--danger); cursor: pointer; font-size: 18px; line-height: 1; background: none; border: none; }
+  .cart-total { text-align: right; font-family: 'Barlow Condensed', sans-serif; font-size: 20px; font-weight: 700; margin-top: 12px; color: var(--gold); }
+
+  /* ---- MODAL ---- */
+  .modal-bg { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 100; align-items: center; justify-content: center; }
+  .modal-bg.open { display: flex; }
+  .modal { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 28px; width: 100%; max-width: 520px; max-height: 90vh; overflow-y: auto; }
+  .modal h3 { font-family: 'Barlow Condensed', sans-serif; font-size: 22px; font-weight: 700; margin-bottom: 20px; }
+  .modal-actions { display: flex; gap: 10px; margin-top: 20px; justify-content: flex-end; }
+  .btn-sec { padding: 9px 18px; border: 1px solid var(--border); border-radius: var(--radius); background: transparent; color: var(--muted); cursor: pointer; font-size: 14px; }
+  .btn-acc { padding: 9px 18px; border: none; border-radius: var(--radius); background: var(--accent); color: #fff; cursor: pointer; font-size: 14px; font-weight: 500; }
+
+  /* ---- MISC ---- */
+  .btn-sm { padding: 5px 12px; border: 1px solid var(--border); border-radius: 6px; background: transparent; color: var(--text); cursor: pointer; font-size: 13px; transition: all .2s; }
+  .btn-sm:hover { background: var(--card); }
+  .btn-green { border-color: var(--accent); color: var(--accent); }
+  .btn-green:hover { background: rgba(0,166,81,0.1); }
+  .loading { text-align: center; color: var(--muted); padding: 40px; font-size: 15px; }
+  .empty { text-align: center; color: var(--muted); padding: 40px; font-size: 15px; }
+  .add-btn { padding: 8px 16px; background: var(--accent); border: none; border-radius: var(--radius); color: #fff; cursor: pointer; font-family: 'Barlow Condensed', sans-serif; font-size: 15px; font-weight: 600; letter-spacing: 0.04em; transition: opacity .2s; }
+  .add-btn:hover { opacity: 0.85; }
+  .toast { position: fixed; bottom: 24px; right: 24px; background: var(--accent); color: #fff; padding: 12px 20px; border-radius: var(--radius); font-size: 14px; font-weight: 500; z-index: 999; opacity: 0; transform: translateY(10px); transition: all .3s; pointer-events: none; }
+  .toast.show { opacity: 1; transform: translateY(0); }
+  .section-row { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; }
+
+  @media (max-width: 640px) {
+    .page { padding: 16px; }
+    .topnav { padding: 0 14px; }
+    .nav-btn { padding: 6px 10px; font-size: 13px; }
+    .stats-grid { grid-template-columns: 1fr 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="loginScreen" class="screen active">
+  <div class="login-box">
+    <div class="login-logo">
+      <div class="brand">TRUST PARTS</div>
+      <div class="sub">Automotive Parts Warehouse</div>
+    </div>
+    <div class="tab-row">
+      <button class="tab-btn active" onclick="setLoginTab('customer')">Customer</button>
+      <button class="tab-btn" onclick="setLoginTab('admin')">Admin</button>
+    </div>
+    <div class="field"><label>Name / Username</label><input id="loginUser" type="text" placeholder="Enter your name"></div>
+    <div class="field"><label>Password</label><input id="loginPass" type="password" placeholder="••••••••"></div>
+    <button class="btn-primary" id="loginBtn" onclick="doLogin()">Sign In</button>
+    <div class="login-err" id="loginErr"></div>
+  </div>
+</div>
+
+<!-- MAIN APP -->
+<div id="appScreen" class="screen">
+  <nav class="topnav">
+    <div class="brand">TRUST PARTS</div>
+    <div class="divider"></div>
+    <div class="nav-links" id="navLinks"></div>
+    <div class="user-badge">Signed in as <span id="userLabel"></span></div>
+    <button class="logout-btn" onclick="logout()">Sign out</button>
+  </nav>
+  <div class="page-content">
+
+    <!-- CUSTOMER: PARTS -->
+    <div class="page" id="pg-parts">
+      <div class="page-title">Parts Catalog</div>
+      <div class="table-wrap">
+        <div class="table-toolbar">
+          <h3>Available Parts</h3>
+          <input class="search-input" id="partsSearch" placeholder="Search by name or OE No..." oninput="filterParts()">
+          <button class="add-btn" onclick="openCartModal()" id="cartBtn" style="display:none">Cart (<span id="cartCount">0</span>)</button>
+        </div>
+        <div id="partsBody"><div class="loading">Loading parts...</div></div>
+      </div>
+    </div>
+
+    <!-- CUSTOMER: MY ORDERS -->
+    <div class="page" id="pg-myorders">
+      <div class="page-title">My Invoices</div>
+      <div id="myOrdersBody"><div class="loading">Loading...</div></div>
+    </div>
+
+    <!-- CUSTOMER: MY BALANCE -->
+    <div class="page" id="pg-balance">
+      <div class="page-title">My Account</div>
+      <div id="balanceBody"><div class="loading">Loading...</div></div>
+    </div>
+
+    <!-- ADMIN: DASHBOARD -->
+    <div class="page" id="pg-dashboard">
+      <div class="page-title">Dashboard</div>
+      <div id="dashBody"><div class="loading">Loading...</div></div>
+    </div>
+
+    <!-- ADMIN: INVENTORY -->
+    <div class="page" id="pg-inventory">
+      <div class="page-title">Inventory</div>
+      <div class="table-wrap">
+        <div class="table-toolbar">
+          <h3>All Parts</h3>
+          <input class="search-input" id="invSearch" placeholder="Search..." oninput="filterInventory()">
+        </div>
+        <div id="invBody"><div class="loading">Loading...</div></div>
+      </div>
+    </div>
+
+    <!-- ADMIN: INVOICES -->
+    <div class="page" id="pg-invoices">
+      <div class="page-title">Invoices</div>
+      <div class="section-row">
+        <input class="search-input" id="invFilter" placeholder="Filter by customer or invoice ID..." oninput="filterInvoices()" style="width:280px">
+      </div>
+      <div id="invoicesBody"><div class="loading">Loading...</div></div>
+    </div>
+
+    <!-- ADMIN: CUSTOMERS -->
+    <div class="page" id="pg-customers">
+      <div class="page-title">Customers</div>
+      <div class="section-row">
+        <button class="add-btn" onclick="openAddCustomer()">+ Add Customer</button>
+      </div>
+      <div class="table-wrap">
+        <div id="custBody"><div class="loading">Loading...</div></div>
+      </div>
+    </div>
+
+    <!-- ADMIN: PAYMENTS -->
+    <div class="page" id="pg-payments">
+      <div class="page-title">Payments</div>
+      <div class="section-row">
+        <button class="add-btn" onclick="openAddPayment()">+ Record Payment</button>
+      </div>
+      <div class="table-wrap">
+        <div id="paymentsBody"><div class="loading">Loading...</div></div>
+      </div>
+    </div>
+
+    <!-- ADMIN: LOW STOCK -->
+    <div class="page" id="pg-lowstock">
+      <div class="page-title">Low Stock Alerts</div>
+      <div id="lowBody"><div class="loading">Loading...</div></div>
+    </div>
+
+    <!-- ADMIN: EXPENSES -->
+    <div class="page" id="pg-expenses">
+      <div class="page-title">Expenses</div>
+      <div class="section-row">
+        <button class="add-btn" onclick="openAddExpense()">+ Add Expense</button>
+      </div>
+      <div class="table-wrap">
+        <div id="expBody"><div class="loading">Loading...</div></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- CART MODAL -->
+<div class="modal-bg" id="cartModal">
+  <div class="modal">
+    <h3>Order Cart</h3>
+    <div id="cartItems"><div class="empty">Cart is empty</div></div>
+    <div id="cartTotalRow"></div>
+    <div class="field" style="margin-top:14px"><label>Notes</label><input id="orderNotes" type="text" placeholder="Optional notes..."></div>
+    <div class="modal-actions">
+      <button class="btn-sec" onclick="closeModal('cartModal')">Cancel</button>
+      <button class="btn-acc" onclick="submitOrder()">Place Order</button>
+    </div>
+  </div>
+</div>
+
+<!-- ADD CUSTOMER MODAL -->
+<div class="modal-bg" id="addCustModal">
+  <div class="modal">
+    <h3>Add Customer</h3>
+    <div class="field"><label>Name</label><input id="newCustName" type="text"></div>
+    <div class="field"><label>Phone</label><input id="newCustPhone" type="text"></div>
+    <div class="field"><label>Password</label><input id="newCustPass" type="text" value="123456"></div>
+    <div class="modal-actions">
+      <button class="btn-sec" onclick="closeModal('addCustModal')">Cancel</button>
+      <button class="btn-acc" onclick="submitNewCustomer()">Add</button>
+    </div>
+  </div>
+</div>
+
+<!-- ADD PAYMENT MODAL -->
+<div class="modal-bg" id="addPayModal">
+  <div class="modal">
+    <h3>Record Payment</h3>
+    <div class="field"><label>Customer name</label><input id="payCustomer" type="text"></div>
+    <div class="field"><label>Amount (EGP)</label><input id="payAmount" type="number"></div>
+    <div class="field"><label>Invoice ID (optional)</label><input id="payInvId" type="text" placeholder="e.g. INV0045"></div>
+    <div class="modal-actions">
+      <button class="btn-sec" onclick="closeModal('addPayModal')">Cancel</button>
+      <button class="btn-acc" onclick="submitPayment()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- ADD EXPENSE MODAL -->
+<div class="modal-bg" id="addExpModal">
+  <div class="modal">
+    <h3>Add Expense</h3>
+    <div class="field"><label>Description</label><input id="expDesc" type="text"></div>
+    <div class="field"><label>Amount (EGP)</label><input id="expAmount" type="number"></div>
+    <div class="modal-actions">
+      <button class="btn-sec" onclick="closeModal('addExpModal')">Cancel</button>
+      <button class="btn-acc" onclick="submitExpense()">Save</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ============================================================
+//  CONFIG — paste your deployed Apps Script URL here
+// ============================================================
+const API = 'YOUR_APPS_SCRIPT_URL_HERE';
+
+// ============================================================
+//  STATE
+// ============================================================
+let currentUser = null;
+let currentRole = null;
+let loginTab    = 'customer';
+let allParts    = [];
+let allInvoices = [];
+let allInventory= [];
+let cart        = [];
+
+// ============================================================
+//  HELPERS
+// ============================================================
+const fmt = n => isNaN(n) ? '—' : Number(n).toLocaleString('en-EG', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+const fmtEGP = n => 'EGP ' + fmt(n);
+
+async function apiGet(params) {
+  const url = API + '?' + new URLSearchParams(params);
+  const r   = await fetch(url);
+  return r.json();
+}
+async function apiPost(body) {
+  const r = await fetch(API, { method: 'POST', body: JSON.stringify(body) });
+  return r.json();
+}
+
+function toast(msg, err = false) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.style.background = err ? 'var(--danger)' : 'var(--accent)';
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+function openModal(id)  { document.getElementById(id).classList.add('open'); }
+
+// ============================================================
+//  LOGIN
+// ============================================================
+function setLoginTab(tab) {
+  loginTab = tab;
+  document.querySelectorAll('.tab-btn').forEach((b,i) => b.classList.toggle('active', (i===0&&tab==='customer')||(i===1&&tab==='admin')));
+}
+
+async function doLogin() {
+  const u = document.getElementById('loginUser').value.trim();
+  const p = document.getElementById('loginPass').value.trim();
+  const btn = document.getElementById('loginBtn');
+  if (!u || !p) { document.getElementById('loginErr').textContent = 'Please enter name and password'; return; }
+  btn.disabled = true; btn.textContent = 'Signing in...';
+  document.getElementById('loginErr').textContent = '';
+  try {
+    const action = loginTab === 'admin' ? 'adminLogin' : 'login';
+    const res    = await apiPost({ action, username: u, password: p });
+    if (res.success) {
+      currentUser = res.name || u;
+      currentRole = res.role;
+      startApp();
+    } else {
+      document.getElementById('loginErr').textContent = res.error || 'Login failed';
+    }
+  } catch(e) {
+    document.getElementById('loginErr').textContent = 'Connection error. Check API URL.';
+  }
+  btn.disabled = false; btn.textContent = 'Sign In';
+}
+
+document.addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+
+// ============================================================
+//  APP INIT
+// ============================================================
+function startApp() {
+  document.getElementById('loginScreen').classList.remove('active');
+  document.getElementById('appScreen').classList.add('active');
+  document.getElementById('userLabel').textContent = currentUser;
+  buildNav();
+  if (currentRole === 'admin') showPage('dashboard');
+  else { loadParts(); showPage('parts'); }
+}
+
+function logout() {
+  currentUser = null; currentRole = null; cart = [];
+  document.getElementById('appScreen').classList.remove('active');
+  document.getElementById('loginScreen').classList.add('active');
+  document.getElementById('loginUser').value = '';
+  document.getElementById('loginPass').value = '';
+}
+
+function buildNav() {
+  const links = document.getElementById('navLinks');
+  links.innerHTML = '';
+  const pages = currentRole === 'admin'
+    ? [['dashboard','Dashboard'],['inventory','Inventory'],['invoices','Invoices'],['customers','Customers'],['payments','Payments'],['lowstock','Low Stock'],['expenses','Expenses']]
+    : [['parts','Parts Catalog'],['myorders','My Invoices'],['balance','My Account']];
+  pages.forEach(([id, label]) => {
+    const b = document.createElement('button');
+    b.className = 'nav-btn'; b.textContent = label;
+    b.onclick = () => {
+      if (id === 'parts')    { loadParts();       showPage('parts'); }
+      else if (id === 'myorders') { loadMyOrders(); showPage('myorders'); }
+      else if (id === 'balance')  { loadBalance();  showPage('balance'); }
+      else if (id === 'dashboard'){ loadDash();     showPage('dashboard'); }
+      else if (id === 'inventory'){ loadInventory();showPage('inventory'); }
+      else if (id === 'invoices') { loadInvoices(); showPage('invoices'); }
+      else if (id === 'customers'){ loadCustomers();showPage('customers'); }
+      else if (id === 'payments') { loadPayments(); showPage('payments'); }
+      else if (id === 'lowstock') { loadLowStock(); showPage('lowstock'); }
+      else if (id === 'expenses') { loadExpenses(); showPage('expenses'); }
+    };
+    links.appendChild(b);
+  });
+}
+
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach((b,i) => {
+    const pages = currentRole === 'admin'
+      ? ['dashboard','inventory','invoices','customers','payments','lowstock','expenses']
+      : ['parts','myorders','balance'];
+    b.classList.toggle('active', pages[i] === id);
+  });
+  document.getElementById('pg-' + id).classList.add('active');
+}
+
+// ============================================================
+//  CUSTOMER: PARTS CATALOG
+// ============================================================
+async function loadParts() {
+  document.getElementById('partsBody').innerHTML = '<div class="loading">Loading parts...</div>';
+  const res = await apiGet({ action: 'getParts' });
+  allParts = res.parts || [];
+  renderParts(allParts);
+  if (currentRole === 'customer') document.getElementById('cartBtn').style.display = 'inline-block';
+}
+
+function filterParts() {
+  const q = document.getElementById('partsSearch').value.toLowerCase();
+  renderParts(q ? allParts.filter(p => p.name.toLowerCase().includes(q) || p.oeNo.toLowerCase().includes(q) || p.desc.toLowerCase().includes(q)) : allParts);
+}
+
+function renderParts(parts) {
+  if (!parts.length) { document.getElementById('partsBody').innerHTML = '<div class="empty">No parts found</div>'; return; }
+  const rows = parts.map(p => `
+    <tr>
+      <td><strong>${p.oeNo}</strong></td>
+      <td>${p.name}</td>
+      <td style="color:var(--muted);font-size:13px">${p.desc}</td>
+      <td>${p.qty > 0 ? '<span class="badge badge-ok">In stock: '+p.qty+'</span>' : '<span class="badge badge-reorder">Out of stock</span>'}</td>
+      <td style="color:var(--gold);font-weight:500">${fmtEGP(p.price)}</td>
+      ${currentRole==='customer' ? `<td><button class="btn-sm btn-green" onclick='addToCart(${JSON.stringify(p).replace(/'/g,"&#39;")})' ${p.qty<=0?'disabled':''}>Add to cart</button></td>` : '<td></td>'}
+    </tr>`).join('');
+  document.getElementById('partsBody').innerHTML = `<table><thead><tr><th>OE No</th><th>Part name</th><th>Description</th><th>Stock</th><th>Price</th><th></th></tr></thead><tbody>${rows}</tbody></table>`;
+}
+
+// CART
+function addToCart(part) {
+  const existing = cart.find(c => c.oeNo === part.oeNo);
+  if (existing) existing.qty++;
+  else cart.push({ ...part, qty: 1 });
+  document.getElementById('cartCount').textContent = cart.reduce((s,c)=>s+c.qty,0);
+  toast(part.name + ' added to cart');
+}
+
+function openCartModal() {
+  renderCart();
+  openModal('cartModal');
+}
+
+function renderCart() {
+  if (!cart.length) {
+    document.getElementById('cartItems').innerHTML = '<div class="empty">Cart is empty</div>';
+    document.getElementById('cartTotalRow').innerHTML = '';
+    return;
+  }
+  const items = cart.map((c,i) => `
+    <div class="cart-item">
+      <div class="ci-name"><strong>${c.oeNo}</strong><br><span style="font-size:13px;color:var(--muted)">${c.name}</span></div>
+      <input class="ci-qty" type="number" min="1" value="${c.qty}" onchange="updateCartQty(${i}, this.value)">
+      <div class="ci-price">${fmtEGP(c.price * c.qty)}</div>
+      <button class="ci-remove" onclick="removeFromCart(${i})">×</button>
+    </div>`).join('');
+  const total = cart.reduce((s,c)=>s+c.price*c.qty,0);
+  document.getElementById('cartItems').innerHTML = items;
+  document.getElementById('cartTotalRow').innerHTML = `<div class="cart-total">Total: ${fmtEGP(total)}</div>`;
+}
+
+function updateCartQty(i, v) { cart[i].qty = Math.max(1, parseInt(v)||1); renderCart(); document.getElementById('cartCount').textContent = cart.reduce((s,c)=>s+c.qty,0); }
+function removeFromCart(i)    { cart.splice(i,1); renderCart(); document.getElementById('cartCount').textContent = cart.reduce((s,c)=>s+c.qty,0); }
+
+async function submitOrder() {
+  if (!cart.length) { toast('Cart is empty', true); return; }
+  const notes = document.getElementById('orderNotes').value;
+  const res   = await apiPost({ action: 'placeOrder', customer: currentUser, items: cart, notes });
+  if (res.success) {
+    toast('Order placed! Invoice: ' + res.invoiceId);
+    cart = [];
+    document.getElementById('cartCount').textContent = 0;
+    closeModal('cartModal');
+  } else {
+    toast(res.error || 'Failed to place order', true);
+  }
+}
+
+// ============================================================
+//  CUSTOMER: MY ORDERS
+// ============================================================
+async function loadMyOrders() {
+  document.getElementById('myOrdersBody').innerHTML = '<div class="loading">Loading...</div>';
+  const res = await apiGet({ action: 'getInvoices', customer: currentUser });
+  const invoices = res.invoices || [];
+  if (!invoices.length) { document.getElementById('myOrdersBody').innerHTML = '<div class="empty">No invoices found</div>'; return; }
+  const html = invoices.map(inv => `
+    <div class="table-wrap" style="margin-bottom:16px">
+      <div class="table-toolbar">
+        <h3>${inv.invId}</h3>
+        <span style="font-size:13px;color:var(--muted)">${inv.date}</span>
+        <span class="badge ${inv.status==='Paid'?'badge-paid':inv.status==='Partial payment'?'badge-partial':'badge-unpaid'}">${inv.status||'—'}</span>
+        <span style="margin-left:auto;font-family:'Barlow Condensed',sans-serif;font-size:18px;color:var(--gold)">${fmtEGP(inv.grandTotal)}</span>
+      </div>
+      <table><thead><tr><th>Part No</th><th>Part</th><th>Qty</th><th>Unit price</th><th>Total</th></tr></thead>
+      <tbody>${inv.items.map(it=>`<tr><td>${it.partNo}</td><td>${it.partName}</td><td>${it.qty}</td><td>${fmtEGP(it.unit)}</td><td style="color:var(--gold)">${fmtEGP(it.total)}</td></tr>`).join('')}</tbody></table>
+    </div>`).join('');
+  document.getElementById('myOrdersBody').innerHTML = html;
+}
+
+// ============================================================
+//  CUSTOMER: BALANCE
+// ============================================================
+async function loadBalance() {
+  document.getElementById('balanceBody').innerHTML = '<div class="loading">Loading...</div>';
+  const res = await apiGet({ action: 'getBalance', customer: currentUser });
+  if (!res.success) { document.getElementById('balanceBody').innerHTML = '<div class="empty">Could not load balance</div>'; return; }
+  const b = res;
+  document.getElementById('balanceBody').innerHTML = `
+    <div class="stats-grid">
+      <div class="stat-card"><div class="stat-label">Total invoiced</div><div class="stat-val gold">${fmtEGP(b.total)}</div></div>
+      <div class="stat-card"><div class="stat-label">Total paid</div><div class="stat-val green">${fmtEGP(b.paid)}</div></div>
+      <div class="stat-card"><div class="stat-label">Remaining balance</div><div class="stat-val ${b.remaining>0?'red':'green'}">${fmtEGP(b.remaining)}</div></div>
+    </div>`;
+}
+
+// ============================================================
+//  ADMIN: DASHBOARD
+// ============================================================
+async function loadDash() {
+  document.getElementById('dashBody').innerHTML = '<div class="loading">Loading...</div>';
+  const res = await apiGet({ action: 'getStats' });
+  const s = res.stats || {};
+  document.getElementById('dashBody').innerHTML = `
+    <div class="stats-grid">
+      <div class="stat-card"><div class="stat-label">Total collected</div><div class="stat-val green">${fmtEGP(s.totalPaid)}</div></div>
+      <div class="stat-card"><div class="stat-label">Outstanding</div><div class="stat-val red">${fmtEGP(s.totalRemaining)}</div></div>
+      <div class="stat-card"><div class="stat-label">Total invoiced</div><div class="stat-val gold">${fmtEGP(s.totalBalance)}</div></div>
+      <div class="stat-card"><div class="stat-label">Total expenses</div><div class="stat-val">${fmtEGP(s.totalExpenses)}</div></div>
+      <div class="stat-card"><div class="stat-label">Net cash</div><div class="stat-val ${s.netCash>=0?'green':'red'}">${fmtEGP(s.netCash)}</div></div>
+      <div class="stat-card"><div class="stat-label">Low stock items</div><div class="stat-val ${s.lowCount>0?'red':'green'}">${s.lowCount}</div></div>
+      <div class="stat-card"><div class="stat-label">Unpaid invoices</div><div class="stat-val ${s.unpaidCount>0?'red':'green'}">${s.unpaidCount}</div></div>
+    </div>`;
+}
+
+// ============================================================
+//  ADMIN: INVENTORY
+// ============================================================
+async function loadInventory() {
+  document.getElementById('invBody').innerHTML = '<div class="loading">Loading...</div>';
+  const res = await apiGet({ action: 'getParts' });
+  allInventory = res.parts || [];
+  renderInventory(allInventory);
+}
+function filterInventory() {
+  const q = document.getElementById('invSearch').value.toLowerCase();
+  renderInventory(q ? allInventory.filter(p => p.name.toLowerCase().includes(q)||p.oeNo.toLowerCase().includes(q)) : allInventory);
+}
+function renderInventory(parts) {
+  if (!parts.length) { document.getElementById('invBody').innerHTML = '<div class="empty">No parts</div>'; return; }
+  const rows = parts.map(p=>`<tr><td><strong>${p.oeNo}</strong></td><td>${p.name}</td><td style="color:var(--muted);font-size:13px">${p.desc}</td><td>${p.qty}</td><td>${fmtEGP(p.cost)}</td><td style="color:var(--gold)">${fmtEGP(p.price)}</td></tr>`).join('');
+  document.getElementById('invBody').innerHTML = `<table><thead><tr><th>OE No</th><th>Name</th><th>Description</th><th>Qty</th><th>Cost</th><th>Selling</th></tr></thead><tbody>${rows}</tbody></table>`;
+}
+
+// ============================================================
+//  ADMIN: INVOICES
+// ============================================================
+async function loadInvoices() {
+  document.getElementById('invoicesBody').innerHTML = '<div class="loading">Loading...</div>';
+  const res = await apiGet({ action: 'getInvoices' });
+  allInvoices = res.invoices || [];
+  renderInvoices(allInvoices);
+}
+function filterInvoices() {
+  const q = document.getElementById('invFilter').value.toLowerCase();
+  renderInvoices(q ? allInvoices.filter(i=>i.invId.toLowerCase().includes(q)||i.customer.toLowerCase().includes(q)) : allInvoices);
+}
+function renderInvoices(invoices) {
+  if (!invoices.length) { document.getElementById('invoicesBody').innerHTML = '<div class="empty">No invoices</div>'; return; }
+  const html = invoices.slice(0,100).map(inv=>`
+    <div class="table-wrap" style="margin-bottom:14px">
+      <div class="table-toolbar" style="padding:10px 16px">
+        <h3 style="font-size:16px">${inv.invId}</h3>
+        <span style="font-size:13px;color:var(--muted)">${inv.date}</span>
+        <span style="font-size:14px;color:var(--text)">${inv.customer}</span>
+        <span class="badge ${inv.status==='Paid'?'badge-paid':inv.status==='Partial payment'?'badge-partial':'badge-unpaid'}">${inv.status||'—'}</span>
+        <span style="margin-left:auto;font-family:'Barlow Condensed',sans-serif;font-size:17px;color:var(--gold)">${fmtEGP(inv.grandTotal)}</span>
+      </div>
+      <table><thead><tr><th>Part No</th><th>Part</th><th>Qty</th><th>Unit</th><th>Total</th></tr></thead>
+      <tbody>${inv.items.map(it=>`<tr><td>${it.partNo}</td><td>${it.partName}</td><td>${it.qty}</td><td>${fmtEGP(it.unit)}</td><td style="color:var(--gold)">${fmtEGP(it.total)}</td></tr>`).join('')}</tbody></table>
+    </div>`).join('');
+  document.getElementById('invoicesBody').innerHTML = html;
+}
+
+// ============================================================
+//  ADMIN: CUSTOMERS
+// ============================================================
+async function loadCustomers() {
+  document.getElementById('custBody').innerHTML = '<div class="loading">Loading...</div>';
+  const res = await apiGet({ action: 'getCustomers' });
+  const custs = res.customers || [];
+  if (!custs.length) { document.getElementById('custBody').innerHTML = '<div class="empty">No customers</div>'; return; }
+  const rows = custs.map(c=>`<tr><td><strong>${c.name}</strong></td><td>${c.phone||'—'}</td><td style="color:var(--gold)">${fmtEGP(c.total)}</td><td style="color:var(--accent)">${fmtEGP(c.paid)}</td><td style="color:${c.remaining>0?'var(--danger)':'var(--accent)'}">${fmtEGP(c.remaining)}</td></tr>`).join('');
+  document.getElementById('custBody').innerHTML = `<table><thead><tr><th>Name</th><th>Phone</th><th>Total invoiced</th><th>Paid</th><th>Remaining</th></tr></thead><tbody>${rows}</tbody></table>`;
+}
+function openAddCustomer() { openModal('addCustModal'); }
+async function submitNewCustomer() {
+  const name = document.getElementById('newCustName').value.trim();
+  const phone= document.getElementById('newCustPhone').value.trim();
+  const pass = document.getElementById('newCustPass').value.trim();
+  if (!name) { toast('Name required', true); return; }
+  const res = await apiPost({ action: 'addCustomer', name, phone, password: pass });
+  if (res.success) { toast('Customer added'); closeModal('addCustModal'); loadCustomers(); }
+  else toast(res.error||'Error', true);
+}
+
+// ============================================================
+//  ADMIN: PAYMENTS
+// ============================================================
+async function loadPayments() {
+  document.getElementById('paymentsBody').innerHTML = '<div class="loading">Loading...</div>';
+  const res = await apiGet({ action: 'getPayments' });
+  const pays = res.payments || [];
+  if (!pays.length) { document.getElementById('paymentsBody').innerHTML = '<div class="empty">No payments</div>'; return; }
+  const rows = pays.slice(0,200).map(p=>`<tr><td>${p.id||'—'}</td><td>${p.date}</td><td>${p.customer}</td><td style="color:var(--accent)">${fmtEGP(p.amount)}</td><td style="color:var(--muted)">${p.desc}</td></tr>`).join('');
+  document.getElementById('paymentsBody').innerHTML = `<table><thead><tr><th>ID</th><th>Date</th><th>Customer</th><th>Amount</th><th>Reference</th></tr></thead><tbody>${rows}</tbody></table>`;
+}
+function openAddPayment() { openModal('addPayModal'); }
+async function submitPayment() {
+  const customer  = document.getElementById('payCustomer').value.trim();
+  const amount    = parseFloat(document.getElementById('payAmount').value);
+  const invoiceId = document.getElementById('payInvId').value.trim();
+  if (!customer||!amount) { toast('Customer and amount required', true); return; }
+  const res = await apiPost({ action: 'addPayment', customer, amount, invoiceId });
+  if (res.success) { toast('Payment recorded'); closeModal('addPayModal'); loadPayments(); }
+  else toast(res.error||'Error', true);
+}
+
+// ============================================================
+//  ADMIN: LOW STOCK
+// ============================================================
+async function loadLowStock() {
+  document.getElementById('lowBody').innerHTML = '<div class="loading">Loading...</div>';
+  const res = await apiGet({ action: 'getLowStock' });
+  const items = res.items || [];
+  if (!items.length) { document.getElementById('lowBody').innerHTML = '<div class="empty" style="color:var(--accent)">All stock levels OK</div>'; return; }
+  const rows = items.map(i=>`<tr><td><strong>${i.partNo}</strong></td><td>${i.desc}</td><td>${i.current}</td><td>${i.minLevel}</td><td style="color:var(--danger)">${i.suggest}</td></tr>`).join('');
+  document.getElementById('lowBody').innerHTML = `<div class="table-wrap"><table><thead><tr><th>Part No</th><th>Description</th><th>Current stock</th><th>Min level</th><th>Suggested order</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+}
+
+// ============================================================
+//  ADMIN: EXPENSES
+// ============================================================
+async function loadExpenses() {
+  document.getElementById('expBody').innerHTML = '<div class="loading">Loading...</div>';
+  const res = await apiGet({ action: 'getExpenses' });
+  const exps = res.expenses || [];
+  if (!exps.length) { document.getElementById('expBody').innerHTML = '<div class="empty">No expenses</div>'; return; }
+  const rows = exps.slice(0,200).map(e=>`<tr><td>${e.id||'—'}</td><td>${e.date}</td><td>${e.desc}</td><td style="color:var(--danger)">${fmtEGP(e.amount)}</td></tr>`).join('');
+  document.getElementById('expBody').innerHTML = `<table><thead><tr><th>ID</th><th>Date</th><th>Description</th><th>Amount</th></tr></thead><tbody>${rows}</tbody></table>`;
+}
+function openAddExpense() { openModal('addExpModal'); }
+async function submitExpense() {
+  const desc   = document.getElementById('expDesc').value.trim();
+  const amount = parseFloat(document.getElementById('expAmount').value);
+  if (!desc||!amount) { toast('Description and amount required', true); return; }
+  const res = await apiPost({ action: 'addExpense', desc, amount });
+  if (res.success) { toast('Expense added'); closeModal('addExpModal'); loadExpenses(); }
+  else toast(res.error||'Error', true);
+}
+</script>
+</body>
+</html>
